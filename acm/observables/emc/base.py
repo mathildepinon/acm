@@ -13,8 +13,8 @@ class BaseModel(ABC):
     def __init__(self, observable):
         self.observable = observable
 
-    def get_prediction(self, x, return_tensor=True, no_grad=True,):
-        return self.observable.get_model_prediction(x, return_tensor=return_tensor, no_grad=no_grad,)
+    def get_prediction(self, x, return_tensor=False, no_grad=True,):
+        return self.observable.get_model_prediction(x, return_tensor=return_tensor, no_grad=no_grad)
 
 
 class BaseObservable(ABC):
@@ -68,26 +68,31 @@ class BaseObservable(ABC):
         """
         lhc_dir = Path(emc_paths['lhc_dir'])
         return lhc_dir / f'{self.stat_name}.npy'
+        #data_dir = f'/pscratch/sd/m/mpinon/density/training_sets/cosmo+hod/ph000/seed0/use'
+        #return Path(data_dir) / f'{self.stat_name}.npy'
 
     def emulator_error_fname(self):
         """
         File containing the emulator error.
         """
         emulator_error_dir = Path(emc_paths['emulator_error_dir'])
+        #emulator_error_dir =  Path('/pscratch/sd/m/mpinon/density/emc/emulator_error/')
         return emulator_error_dir / f'{self.stat_name}.npy'
 
     def small_box_fname(self):
         """
         File containing the output features from the small AbacusSummit box.
         """
-        covariance_dir = Path(emc_paths['covariance_dir'])
+        covariance_dir = Path(emc_paths['covariance_dir']) 
+        #covariance_dir = Path('/pscratch/sd/m/mpinon/density/cov/use/')
         return covariance_dir / f'{self.stat_name}.npy'
 
     def diffsky_fname(self, phase_idx, sampling):
         """
         File containing the measurements from Diffsky simulations.
         """
-        base_dir = Path(emc_paths['diffsky_dir'])
+        base_dir = Path(emc_paths['diffsky_dir']) 
+        #base_dir = Path('/pscratch/sd/m/mpinon/density/diffsky/use')
         diffsky_dir = base_dir / f'galsampled_67120_fixedAmp_{phase_idx:03}_{sampling}_v0.3'
         return diffsky_dir / f'{self.stat_name}.npy'
 
@@ -298,11 +303,16 @@ class BaseObservable(ABC):
             select_indices = self.select_indices['bin_idx']
         else:
             select_indices = {}
+        if hasattr(self, 'r'):
+            kwargs = {'r': self.r}
+        else:
+            kwargs = {}
         observable = self.__class__(
             select_mocks=select_mocks,
             select_indices=select_indices,
             select_coordinates=self.select_coordinates,
-            slice_coordinates=self.slice_coordinates)
+            slice_coordinates=self.slice_coordinates,
+            **kwargs)
         test_x = observable.lhc_x
         test_y = observable.lhc_y
         # reshape to (n_samples, n_features)
@@ -329,11 +339,16 @@ class BaseObservable(ABC):
             select_indices = self.select_indices['bin_idx']
         else:
             select_indices = {}
+        if hasattr(self, 'r'):
+            kwargs = {'r': self.r}
+        else:
+            kwargs = {}
         observable = self.__class__(
             select_mocks=select_mocks,
             select_indices=select_indices,
             select_coordinates=self.select_coordinates,
-            slice_coordinates=self.slice_coordinates)
+            slice_coordinates=self.slice_coordinates,
+            **kwargs)
         test_x = observable.lhc_x
         test_y = observable.lhc_y
         # reshape to (n_samples, n_features)
@@ -353,6 +368,7 @@ class BaseObservable(ABC):
             select_indices = self.select_indices['bin_idx']
         else:
             select_indices = {}
+        
         for i in range(len(select_mocks)):
             observable = self.__class__(
                 select_mocks=select_mocks,
@@ -377,7 +393,7 @@ class BaseObservable(ABC):
         fn = self.lhc_fname()
         return np.load(fn, allow_pickle=True).item()[self.sep_name]
 
-    def get_model_prediction(self, x, batch=True, return_tensor=False, no_grad=True,):
+    def get_model_prediction(self, x, batch=True, return_tensor=False, no_grad=True):
         """
         Get model prediction for a given x.
 

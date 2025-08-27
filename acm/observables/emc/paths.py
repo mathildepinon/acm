@@ -3,9 +3,9 @@ from acm.data.default import cosmo_list # List of cosmologies in AbacusSummit
 # Reference paths for the EMC project
 emc_paths = {
     # dir of the input data and covariance
-    'lhc_dir': '/pscratch/sd/e/epaillas/emc/v1.1/abacus/training_sets/cosmo+hod',
+    'lhc_dir': '/pscratch/sd/m/mpinon/acm/training_sets/cosmo+hod', #'/pscratch/sd/e/epaillas/emc/v1.1/abacus/training_sets/cosmo+hod',
     'diffsky_dir': '/pscratch/sd/e/epaillas/emc/v1.1/diffsky/data_vectors/',
-    'covariance_dir': '/pscratch/sd/e/epaillas/emc/v1.1/abacus/covariance_sets/small_box',
+    'covariance_dir': '/pscratch/sd/m/mpinon/acm/covariance/', #'/pscratch/sd/e/epaillas/emc/v1.1/abacus/covariance_sets/small_box',
     # dir of the errors
     'emulator_error_dir': '/pscratch/sd/e/epaillas/emc/v1.1/emulator_error',
     'emulator_covariance_dir': '/pscratch/sd/s/sbouchar/acm/emc/emulator_error/',
