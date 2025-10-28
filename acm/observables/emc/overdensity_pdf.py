@@ -70,13 +70,13 @@ class GalaxyOverdensityPDF(BaseObservable):
         #     return f'/pscratch/sd/m/mpinon/density/trained_models/pdf/r20/cosmo+hod/optuna/asinh/last-v2.ckpt'
 
 
-class GalaxyOverdensityVariance(BaseObservable):
+class GalaxyOverdensityMoments(BaseObservable):
     """
     Class for the Emulator's Mock Challenge galaxy overdensity variance.
     """
     def __init__(self, phase_correction=False, **kwargs):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.stat_name = 'variance'
+        self.stat_name = 'moments'
         self.sep_name = 'r'
 
         if phase_correction and hasattr(self, 'compute_phase_correction'):
@@ -111,7 +111,8 @@ class GalaxyOverdensityVariance(BaseObservable):
         Coordinates of the data and model vectors.
         """
         return{
-            self.sep_name: self.separation,
+            'order': np.array([2, 3, 4]),
+            'r': self.separation
         }
 
     @property
@@ -119,7 +120,7 @@ class GalaxyOverdensityVariance(BaseObservable):
         """
         Indices of the (flat) coordinates of the data and model vectors.
         """
-        return{'bin_idx': list(range(len(self.separation)))}
+        return{'bin_idx': list(range(len(2 * self.separation)))}
     
     @property
     def model_fn(self):
@@ -143,10 +144,16 @@ class GalaxyOverdensityVariance(BaseObservable):
                 prediction = self.checkpoint.get_prediction(torch.Tensor(x))
         # take the variance of each distribution
         delta = np.load('/pscratch/sd/m/mpinon/acm/training_sets/cosmo+hod/pdf.npy', allow_pickle=True).item()['delta']
-        prediction_r10 = variance_from_pdf(prediction[..., :125], torch.Tensor(delta[:125])) # R = 10
-        prediction_r15 = variance_from_pdf(prediction[..., 125:199], torch.Tensor(delta[125:199])) # R = 15
-        prediction_r20 = variance_from_pdf(prediction[..., 199:], torch.Tensor(delta[199:])) # R = 20
-        prediction = torch.cat([prediction_r10, prediction_r15, prediction_r20], dim=-1)
+        var_r10 = variance_from_pdf(prediction[..., :125], torch.Tensor(delta[:125])) # R = 10
+        var_r15 = variance_from_pdf(prediction[..., 125:199], torch.Tensor(delta[125:199])) # R = 15
+        var_r20 = variance_from_pdf(prediction[..., 199:], torch.Tensor(delta[199:])) # R = 20
+        new_pred = torch.cat([var_r10, var_r15, var_r20], dim=-1)
+        for o in [3, 4]:
+            mom_r10 = moment_from_pdf(prediction[..., :125], torch.Tensor(delta[:125]), order=o) # R = 10
+            mom_r15 = moment_from_pdf(prediction[..., 125:199], torch.Tensor(delta[125:199]), order=o) # R = 15
+            mom_r20 = moment_from_pdf(prediction[..., 199:], torch.Tensor(delta[199:]), order=o) # R = 20
+            new_pred = torch.cat([new_pred, mom_r10, mom_r15, mom_r20], dim=-1)
+        prediction = new_pred
         if return_tensor:
             return prediction
         prediction = prediction.numpy()
@@ -179,3 +186,13 @@ def variance_from_pdf(pdf, x):
     if len(var) > 1:
         var = var[..., None]
     return var
+
+def moment_from_pdf(pdf, x, order=3):
+    """Compute variance from normalized pdf values"""
+    var = variance_from_pdf(pdf, x)
+    std = torch.sqrt(var)
+    mean = torch.trapezoid(pdf * x, x=x, dim=-1)
+    skew = torch.trapezoid(((x[None, ...] - mean[..., None])/std)**order * pdf, x=x, dim=-1)
+    if len(skew) > 1:
+        skew = skew[..., None]
+    return skew

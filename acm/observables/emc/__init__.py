@@ -11,7 +11,7 @@ from .vide_voids import VIDEVoidGalaxyDensityProfile
 from .vide_vsf import VIDEVoidSizeFunction
 from .wavelet_scattering import WaveletScatteringTransform
 from .minkowski import MinkowskiFunctionals
-from .overdensity_pdf import GalaxyOverdensityPDF, GalaxyOverdensityVariance
+from .overdensity_pdf import GalaxyOverdensityPDF, GalaxyOverdensityMoments
 from .cumulants import CumulantGeneratingFunction
 from .mst import MinimumSpanningTree
 from .bispectrum import GalaxyBispectrumMultipoles
